@@ -1,5 +1,10 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db import models
+
+from breaks.constants import BREAK_CREATED_STATUS, BREAK_CREATED_DEFAULT
+from common.models import BaseDictModelMixin
+
+User = get_user_model()
 
 
 class Organization(models.Model):
@@ -70,19 +75,16 @@ class Replacement(models.Model):
         return f"Replacement №{self.pk} for {self.group}"
 
 
-class ReplacementStatus(models.Model):
-    code = models.CharField("Code", max_length=16, primary_key=True)
-    name = models.CharField("Name", max_length=32)
-    sort = models.PositiveSmallIntegerField("Sorting", null=True, blank=True)
-    is_active = models.BooleanField("Activity Status", default=True)
-
+class ReplacementStatus(BaseDictModelMixin):
     class Meta:
         verbose_name = "Replacement Status"
         verbose_name_plural = "Replacements Status"
-        ordering = ("sort",)
 
-    def __str__(self):
-        return f"{self.code} for {self.name}"
+
+class BreakStatus(BaseDictModelMixin):
+    class Meta:
+        verbose_name = "Break Status"
+        verbose_name_plural = "Breaks Status"
 
 
 class ReplacementEmployee(models.Model):
@@ -105,3 +107,33 @@ class ReplacementEmployee(models.Model):
 
     def __str__(self):
         return f"Replacement {self.replacement} for {self.employee}"
+
+
+class Break(models.Model):
+    replacement = models.ForeignKey(
+        Replacement, models.CASCADE, "breaks", verbose_name="Replacement"
+    )
+    employee = models.ForeignKey(
+        User, models.CASCADE, "breaks", verbose_name="Employees"
+    )
+    break_start = models.TimeField("Start break", null=True, blank=True)
+    break_end = models.TimeField("End break", null=True, blank=True)
+    status = models.ForeignKey(
+        BreakStatus, models.RESTRICT, "breaks", verbose_name="Status", blank=True
+    )
+
+    class Meta:
+        verbose_name = "Lunch break"
+        verbose_name_plural = "Lunch breaks"
+        ordering = ("-replacement__date", "break_start")
+
+    def __str__(self):
+        return f"Break of user{ self.employee} ({self.pk})"
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            status, created = BreakStatus.objects.get_or_create(
+                code=BREAK_CREATED_STATUS, defaults=BREAK_CREATED_DEFAULT
+            )
+            self.status = status
+        return super().save(*args, **kwargs)
