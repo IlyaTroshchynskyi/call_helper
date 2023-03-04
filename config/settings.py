@@ -35,11 +35,13 @@ INSTALLED_APPS += [
     "django_filters",
     "corsheaders",
     "djoser",
+    "phonenumber_field",
 ]
 
 INSTALLED_APPS += [
     "api",
     "common",
+    "users",
     "breaks",
     "drf_spectacular",
 ]
@@ -74,7 +76,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
-
+AUTH_USER_MODEL = "users.User"
+AUTHENTICATION_BACKENDS = ("users.backends.AuthBackend",)
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
