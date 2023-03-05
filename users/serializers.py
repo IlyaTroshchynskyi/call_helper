@@ -86,7 +86,7 @@ class MeSerializer(serializers.ModelSerializer):
             "phone_number",
             "username",
             "profile",
-            "date_joined"
+            "date_joined",
         )
 
 
@@ -98,7 +98,7 @@ class MeUpdateSerializer(serializers.ModelSerializer):
         fields = ("id", "first_name", "last_name", "email", "phone_number", "username", "profile")
 
     def update(self, instance, validated_data):
-        # Check if profile exist
+        print("updatew============")
         profile_data = validated_data.pop("profile") if "profile" in validated_data else None
 
         with transaction.atomic():

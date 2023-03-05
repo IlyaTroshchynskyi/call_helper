@@ -10,6 +10,7 @@ class AuthBackend:
     supports_inactive_user = True
 
     def get_user(self, user_id):
+        print(user_id)
         try:
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
@@ -17,7 +18,10 @@ class AuthBackend:
 
     def authenticate(self, request, username, password):
         try:
-            user = User.objects.get(Q(username=username) | Q(email=username) | Q(phone_number=username))
+            user = User.objects.get(
+                Q(username=username) | Q(email=username) | Q(phone_number=username)
+            )
+            print("In authtenticate user")
         except User.DoesNotExist:
             return None
         return user if user.check_password(password) else None

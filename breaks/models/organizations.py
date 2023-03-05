@@ -35,10 +35,14 @@ class Group(models.Model):
     name = models.CharField("Name", max_length=255)
     manager = models.ForeignKey(User, models.RESTRICT, "group_managers", verbose_name="Manager")
     employees = models.ManyToManyField(User, "group_employees", verbose_name="Employees", blank=True)
-    min_active = models.PositiveSmallIntegerField("Min count active employees", null=True, blank=True)
+    min_active = models.PositiveSmallIntegerField(
+        "Min count active employees", null=True, blank=True
+    )
     break_start = models.TimeField("Start break", null=True, blank=True)
     break_end = models.TimeField("End break", null=True, blank=True)
-    break_max_duration = models.PositiveSmallIntegerField("Max duration of break", null=True, blank=True)
+    break_max_duration = models.PositiveSmallIntegerField(
+        "Max duration of break", null=True, blank=True
+    )
 
     class Meta:
         verbose_name = "Group"
@@ -79,7 +83,9 @@ class BreakStatus(BaseDictModelMixin):
 
 class ReplacementEmployee(models.Model):
     employee = models.ForeignKey(User, models.CASCADE, "replacements", verbose_name="Employees")
-    replacement = models.ForeignKey(Replacement, models.CASCADE, "employees", verbose_name="Replacement")
+    replacement = models.ForeignKey(
+        Replacement, models.CASCADE, "employees", verbose_name="Replacement"
+    )
     status = models.ForeignKey(
         ReplacementStatus,
         models.CASCADE,
@@ -96,11 +102,15 @@ class ReplacementEmployee(models.Model):
 
 
 class Break(models.Model):
-    replacement = models.ForeignKey(Replacement, models.CASCADE, "breaks", verbose_name="Replacement")
+    replacement = models.ForeignKey(
+        Replacement, models.CASCADE, "breaks", verbose_name="Replacement"
+    )
     employee = models.ForeignKey(User, models.CASCADE, "breaks", verbose_name="Employees")
     break_start = models.TimeField("Start break", null=True, blank=True)
     break_end = models.TimeField("End break", null=True, blank=True)
-    status = models.ForeignKey(BreakStatus, models.RESTRICT, "breaks", verbose_name="Status", blank=True)
+    status = models.ForeignKey(
+        BreakStatus, models.RESTRICT, "breaks", verbose_name="Status", blank=True
+    )
 
     class Meta:
         verbose_name = "Lunch break"

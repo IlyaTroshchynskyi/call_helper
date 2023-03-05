@@ -35,6 +35,7 @@ class RegistrationView(CreateAPIView):
 class ChangePasswordView(APIView):
     def post(self, request):
         user = request.user
+        print("print user-----------", user)
         serializer = ChangePasswordSerializer(instance=user, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
