@@ -26,5 +26,5 @@ class User(AbstractUser):
 
 @receiver(post_save, sender=User)
 def post_save_user(sender, instance, created, **kwargs):
-    if hasattr(instance, "profile"):
+    if not hasattr(instance, "profile"):
         Profile.objects.create(user=instance)

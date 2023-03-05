@@ -11,7 +11,7 @@ class CustomUserManager(BaseUserManager):
         email=None,
         password=None,
         username=None,
-        **extra_fields
+        **extra_fields,
     ):
         if not (email or phone_number or username):
             raise ParseError("Define email or phone number")
@@ -41,15 +41,13 @@ class CustomUserManager(BaseUserManager):
         email=None,
         password=None,
         username=None,
-        **extra_fields
+        **extra_fields,
     ):
         extra_fields.setdefault("is_superuser", False)
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_active", True)
 
-        return self._create_user(
-            phone_number, email, password, username, **extra_fields
-        )
+        return self._create_user(phone_number, email, password, username, **extra_fields)
 
     def create_superuser(
         self,
@@ -57,12 +55,10 @@ class CustomUserManager(BaseUserManager):
         email=None,
         password=None,
         username=None,
-        **extra_fields
+        **extra_fields,
     ):
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_active", True)
 
-        return self._create_user(
-            phone_number, email, password, username, **extra_fields
-        )
+        return self._create_user(phone_number, email, password, username, **extra_fields)
