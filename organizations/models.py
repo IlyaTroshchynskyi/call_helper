@@ -3,12 +3,12 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from common.models import BaseDictModelMixin
+from common.models import BaseDictModelMixin, InfoMixin
 
 User = get_user_model()
 
 
-class Organization(models.Model):
+class Organization(InfoMixin):
     name = models.CharField("Name", max_length=255)
     director = models.ForeignKey(
         User,
@@ -29,7 +29,7 @@ class Organization(models.Model):
         return f"{self.name} ({self.pk})"
 
 
-class Group(models.Model):
+class Group(InfoMixin):
     organization = models.ForeignKey(
         Organization, models.CASCADE, "groups", verbose_name="Organizations"
     )
