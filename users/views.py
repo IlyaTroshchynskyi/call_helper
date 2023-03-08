@@ -1,15 +1,20 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+
+from common.views import ListViewSet
+from users.permissions import IsNotCorporate
 from users.serializers import (
     RegistrationSerializer,
     ChangePasswordSerializer,
     MeSerializer,
     MeUpdateSerializer,
+    UserSearchListSerializer,
 )
 
 User = get_user_model()
@@ -48,7 +53,7 @@ class ChangePasswordView(APIView):
     patch=extend_schema(summary="Change the profile of user partially", tags=["Users"]),
 )
 class MeView(RetrieveUpdateAPIView):
-    # permission_classes = [IsNotCorporate]
+    permission_classes = [IsNotCorporate]
     queryset = User.objects.all()
     serializer_class = MeSerializer
     http_method_names = ("get", "patch")
@@ -62,9 +67,9 @@ class MeView(RetrieveUpdateAPIView):
         return self.request.user
 
 
-# @extend_schema_view(
-#     list=extend_schema(summary="Список пользователей Search", tags=["Словари"]),
-# )
-# class UserListSearchView(ListViewSet):
-#     queryset = User.objects.exclude(Q(is_superuser=True) | Q(is_corporate_account=True))
-#     serializer_class = UserSearchListSerializer
+@extend_schema_view(
+    list=extend_schema(summary="List Users Search", tags=["Users"]),
+)
+class UserListSearchView(ListViewSet):
+    queryset = User.objects.exclude(Q(is_superuser=True) | Q(is_corporate_account=True))
+    serializer_class = UserSearchListSerializer

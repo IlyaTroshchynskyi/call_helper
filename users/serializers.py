@@ -125,3 +125,15 @@ class MeUpdateSerializer(serializers.ModelSerializer):
 #             'username',
 #             'full_name',
 #         )
+
+
+class UserShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "username", "full_name")
+
+
+class UserSearchListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "username", "email", "full_name")

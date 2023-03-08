@@ -5,8 +5,8 @@ from breaks import views
 
 router = DefaultRouter()
 
-router.register(r"statuses/breaks/", views.BreakStatusView, "breaks-statuses")
-router.register(r"statuses/replacements/", views.ReplacementStatusView, "replacement-statuses")
+router.register(r"statuses/breaks", views.BreakStatusView, "breaks-statuses")
+router.register(r"statuses/replacements", views.ReplacementStatusView, "replacement-statuses")
 
 
 urlpatterns = []

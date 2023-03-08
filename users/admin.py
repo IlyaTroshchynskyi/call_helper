@@ -18,11 +18,11 @@ class UserAdmin(UserAdmin):
     fieldsets = (
         (
             None,
-            {"fields": ("phone_number", "email")},
+            {"fields": ("phone_number", "email", "username", "is_corporate_account")},
         ),
         (
             _("Personal info"),
-            {"fields": ("username", "first_name", "last_name")},
+            {"fields": ("first_name", "last_name")},
         ),
         (
             _("Permissions"),
