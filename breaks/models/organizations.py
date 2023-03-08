@@ -7,34 +7,14 @@ from common.models import BaseDictModelMixin
 User = get_user_model()
 
 
-class Organization(models.Model):
-    name = models.CharField("Name", max_length=255)
-    director = models.ForeignKey(
-        User,
-        models.RESTRICT,
-        related_name="organization_directors",
-        verbose_name="Director",
+class GroupInfo(models.Model):
+    group = models.OneToOneField(
+        "organizations.Group",
+        models.CASCADE,
+        related_name="breaks_info",
+        verbose_name="Group",
+        primary_key=True,
     )
-    employees = models.ManyToManyField(
-        User, "organization_employees", verbose_name="Employees", blank=True
-    )
-
-    class Meta:
-        verbose_name = "Organization"
-        verbose_name_plural = "Organizations"
-        ordering = ("name",)
-
-    def __str__(self):
-        return f"{self.name} ({self.pk})"
-
-
-class Group(models.Model):
-    organization = models.ForeignKey(
-        Organization, models.CASCADE, "groups", verbose_name="Organizations"
-    )
-    name = models.CharField("Name", max_length=255)
-    manager = models.ForeignKey(User, models.RESTRICT, "group_managers", verbose_name="Manager")
-    employees = models.ManyToManyField(User, "group_employees", verbose_name="Employees", blank=True)
     min_active = models.PositiveSmallIntegerField(
         "Min count active employees", null=True, blank=True
     )
@@ -45,16 +25,17 @@ class Group(models.Model):
     )
 
     class Meta:
-        verbose_name = "Group"
-        verbose_name_plural = "Groups"
-        ordering = ("name",)
+        verbose_name = "Parameter Launch Break"
+        verbose_name_plural = "Parameter Launch Break"
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.group}"
 
 
 class Replacement(models.Model):
-    group = models.ForeignKey(Group, models.CASCADE, "replacements", verbose_name="Group")
+    group = models.ForeignKey(
+        "breaks.GroupInfo", models.CASCADE, "replacements", verbose_name="Group"
+    )
     date = models.DateField("Date of replacement")
     break_start = models.TimeField("Start break")
     break_end = models.TimeField("End break")
