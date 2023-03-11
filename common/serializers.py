@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
+from users.serializers import UserShortSerializer
+
+
 # from users.serializers.nested.users import UserShortSerializer
 
 
@@ -28,14 +31,12 @@ class ExtendedModelSerializer(serializers.ModelSerializer):
     #     return obj
 
 
-# class InfoModelSerializer(ExtendedModelSerializer):
-#     created_by = UserShortSerializer()
-#     updated_by = UserShortSerializer()
-#
-#     class Meta:
-#         abstract = True
-#
-#
+class InfoModelSerializer(ExtendedModelSerializer):
+    created_by = UserShortSerializer()
+    updated_by = UserShortSerializer()
+
+    class Meta:
+        abstract = True
 
 
 class StatusMixinSerializer(serializers.Serializer):

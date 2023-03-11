@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 from common.models import BaseDictModelMixin, InfoMixin
+from organizations.constants import DIRECTOR_POSITION
 
 User = get_user_model()
 
@@ -28,6 +29,13 @@ class Organization(InfoMixin):
     def __str__(self):
         return f"{self.name} ({self.pk})"
 
+    @property
+    def director_employee(self):
+        obj, create = self.employees_info.get_or_create(
+            position_id=DIRECTOR_POSITION,
+            defaults={"user": self.director})
+        return obj
+
 
 class Group(InfoMixin):
     organization = models.ForeignKey(
@@ -40,7 +48,7 @@ class Group(InfoMixin):
         related_name="groups_members",
         verbose_name="Band members",
         blank=True,
-        through="Member",
+        through="Member"
     )
 
     class Meta:
