@@ -32,8 +32,8 @@ class Organization(InfoMixin):
     @property
     def director_employee(self):
         obj, create = self.employees_info.get_or_create(
-            position_id=DIRECTOR_POSITION,
-            defaults={"user": self.director})
+            position_id=DIRECTOR_POSITION, defaults={"user": self.director}
+        )
         return obj
 
 
@@ -48,7 +48,7 @@ class Group(InfoMixin):
         related_name="groups_members",
         verbose_name="Band members",
         blank=True,
-        through="Member"
+        through="Member",
     )
 
     class Meta:
@@ -113,3 +113,35 @@ class Member(models.Model):
 
     def __str__(self):
         return f"Employee {self.employee}"
+
+
+class Offer(InfoMixin):
+    organisation = models.ForeignKey(
+        "Organization", models.RESTRICT, "offers", verbose_name="Organisation"
+    )
+    org_accept = models.BooleanField("Organization Consent", null=True, blank=True)
+    user = models.ForeignKey(User, models.RESTRICT, "offers", verbose_name="User")
+    user_accept = models.BooleanField("User Consent", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Offer"
+        verbose_name_plural = "Offers"
+        ordering = ("-created_at",)
+        unique_together = (("organisation", "user"),)
+
+    def __str__(self):
+        return f"Offer №{self.pk}"
+
+    @property
+    def is_from_org(self):
+        """
+        Is offer from organisation
+        """
+        return bool(self.user != self.created_by)
+
+    @property
+    def is_from_user(self):
+        """
+        Is offer from user
+        """
+        return bool(self.user == self.created_by)

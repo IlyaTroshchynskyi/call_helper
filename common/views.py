@@ -107,23 +107,24 @@ class StatusListMixinView(ListViewSet):
     #     return self.model.objects.filter(is_active=True)
 
 
-#
-#
+class LCUViewSet(
+    ExtendedGenericViewSet,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+):
+    pass
 
-#
-#
-# class LCUViewSet(ExtendedGenericViewSet,
-#                  mixins.ListModelMixin,
-#                  mixins.CreateModelMixin,
-#                  mixins.UpdateModelMixin, ):
-#     pass
-#
-#
-# class LCDViewSet(ExtendedGenericViewSet,
-#                  mixins.ListModelMixin,
-#                  mixins.CreateModelMixin,
-#                  mixins.DestroyModelMixin, ):
-#     pass
+
+class LCDViewSet(
+    ExtendedGenericViewSet,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+):
+    pass
+
+
 #
 #
 # class ExtendedGenericAPIView(ExtendedView, GenericAPIView):

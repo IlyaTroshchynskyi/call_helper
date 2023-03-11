@@ -4,11 +4,18 @@ from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 
-from common.views import StatusListMixinView, ListViewSet, LCRUViewSet, LCRUDViewSet
+from common.views import StatusListMixinView, ListViewSet, LCRUViewSet, LCRUDViewSet, LCUViewSet
 from organizations.backends import MyOrganisation, OwnedByOrganisation, MyGroup
-from organizations.filters import OrganisationFilter, EmployeeFilter, GroupFilter
-from organizations.models import Position, Organization, Employee, Group
-from organizations.permissions import IsMyOrganisation, IsColleagues, IsMyGroup
+from organizations.factory import OfferFactory
+from organizations.filters import (
+    OrganisationFilter,
+    EmployeeFilter,
+    GroupFilter,
+    OfferOrgFilter,
+    OfferUserFilter,
+)
+from organizations.models import Position, Organization, Employee, Group, Offer
+from organizations.permissions import IsMyOrganisation, IsColleagues, IsMyGroup, IsOfferManager
 from organizations.serializers import (
     OrganisationSearchListSerializer,
     OrganisationListSerializer,
@@ -26,6 +33,12 @@ from organizations.serializers import (
     GroupCreateSerializer,
     GroupUpdateSerializer,
     GroupSettingsUpdateSerializer,
+    OfferOrgToUserListSerializer,
+    OfferOrgToUserCreateSerializer,
+    OfferOrgToUserUpdateSerializer,
+    OfferUserToOrgListSerializer,
+    OfferUserToOrgCreateSerializer,
+    OfferUserToOrgUpdateSerializer,
 )
 
 
@@ -66,12 +79,7 @@ class OrganisationView(LCRUViewSet):
 
     http_method_names = ("get", "post", "patch")
 
-    filter_backends = (
-        OrderingFilter,
-        SearchFilter,
-        DjangoFilterBackend,
-        MyOrganisation,
-    )
+    filter_backends = (OrderingFilter, SearchFilter, DjangoFilterBackend, MyOrganisation)
     filterset_class = OrganisationFilter
     ordering = ("name", "id")
     search_fields = ("name",)
@@ -130,18 +138,9 @@ class EmployeeView(LCRUDViewSet):
     def get_serializer_class(self):
         return self.multi_serializer_class[self.action]
 
-    filter_backends = (
-        DjangoFilterBackend,
-        OrderingFilter,
-        SearchFilter,
-        OwnedByOrganisation,
-    )
+    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter, OwnedByOrganisation)
     filterset_class = EmployeeFilter
-    ordering = (
-        "position",
-        "date_joined",
-        "id",
-    )
+    ordering = ("position", "date_joined", "id")
 
     def get_queryset(self):
         qs = Employee.objects.select_related("user", "position").prefetch_related("organisation")
@@ -183,26 +182,15 @@ class GroupView(LCRUViewSet):
 
     http_method_names = ("get", "post", "patch")
 
-    filter_backends = (
-        OrderingFilter,
-        SearchFilter,
-        DjangoFilterBackend,
-        MyGroup,
-    )
+    filter_backends = (OrderingFilter, SearchFilter, DjangoFilterBackend, MyGroup)
     search_fields = ("name",)
     filterset_class = GroupFilter
     ordering = ("name", "id")
 
     def get_queryset(self):
         queryset = (
-            Group.objects.select_related(
-                "manager",
-            )
-            .prefetch_related(
-                "organisation",
-                "organisation__director",
-                "members",
-            )
+            Group.objects.select_related("manager")
+            .prefetch_related("organisation", "organisation__director", "members")
             .annotate(
                 pax=Count("members", distinct=True),
                 can_manage=Case(
@@ -229,3 +217,63 @@ class GroupView(LCRUViewSet):
     @action(methods=["PATCH"], detail=True, url_path="settings")
     def update_settings(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
+
+
+@extend_schema_view(
+    list=extend_schema(summary="List offers of organisation", tags=["Organisation: Offers"]),
+    create=extend_schema(summary="Create offer to user", tags=["Organisation: Offers"]),
+    partial_update=extend_schema(
+        summary="Change  user's offer partially", tags=["Organisation: Offers"]
+    ),
+)
+class OfferOrganisationView(LCUViewSet):
+    permission_classes = [IsOfferManager]
+
+    # docs can be wrong need to check
+    queryset = Offer.objects.all()
+    serializer_class = OfferOrgToUserListSerializer
+
+    multi_serializer_class = {
+        "list": OfferOrgToUserListSerializer,
+        "create": OfferOrgToUserCreateSerializer,
+        "partial_update": OfferOrgToUserUpdateSerializer,
+    }
+
+    lookup_url_kwarg = "offer_id"
+    http_method_names = ("get", "post", "patch")
+
+    filter_backends = (DjangoFilterBackend, OrderingFilter, OwnedByOrganisation)
+    filterset_class = OfferOrgFilter
+    ordering_fields = (
+        "-created_at",
+        "updated_at",
+    )
+
+    def get_queryset(self):
+        return OfferFactory(self.request.user).org_list()
+
+
+@extend_schema_view(
+    list=extend_schema(summary="List offers of users", tags=["Organisation: Offers"]),
+    create=extend_schema(summary="Create offer to organisation", tags=["Organisation: Offers"]),
+    partial_update=extend_schema(
+        summary="Change offer to organisation partially", tags=["Organisation: Offers"]
+    ),
+)
+class OfferUserView(LCUViewSet):
+    queryset = Offer.objects.all()
+    serializer_class = OfferUserToOrgListSerializer
+
+    multi_serializer_class = {
+        "list": OfferUserToOrgListSerializer,
+        "create": OfferUserToOrgCreateSerializer,
+        "partial_update": OfferUserToOrgUpdateSerializer,
+    }
+
+    http_method_names = ("get", "post", "patch")
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_class = OfferUserFilter
+    ordering_fields = ("created_at", "updated_at")
+
+    def get_queryset(self):
+        return OfferFactory(self.request.user).user_list()
