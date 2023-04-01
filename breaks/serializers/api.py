@@ -2,7 +2,7 @@ import datetime
 from time import timezone
 
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
 from rest_framework.fields import SerializerMethodField, BooleanField
@@ -14,6 +14,7 @@ from breaks.constants import (
     REPLACEMENT_MEMBER_BUSY,
     REPLACEMENT_MEMBER_BREAK,
 )
+from breaks.serializers.breaks import ReplacementMemberShortSerializer
 from common.serializers import ExtendedModelSerializer, StatusMixinSerializer, InfoModelSerializer, DictMixinSerializer
 from breaks.models.organizations import (
     ReplacementStatus,
@@ -27,55 +28,6 @@ from breaks.models.organizations import (
 from common.services import convert_timedelta_to_str_time
 from organizations.models import Group, Member
 from organizations.serializers.nested.groups import GroupShortSerializer
-
-
-class BreakSettingsSerializer(ExtendedModelSerializer):
-    class Meta:
-        model = GroupInfo
-        exclude = ("group",)
-
-
-class ReplacementShortSerializer(InfoModelSerializer):
-    class Meta:
-        model = Replacement
-        fields = (
-            "id",
-            "date",
-            "break_start",
-            "break_end",
-            "break_max_duration",
-            "min_active",
-        )
-
-
-class ReplacementMemberShortSerializer(ExtendedModelSerializer):
-    id = serializers.CharField(source="member.employee.user.pk")
-    full_name = serializers.CharField(source="member.employee.user.full_name")
-    username = serializers.CharField(source="member.employee.user.username")
-    email = serializers.CharField(source="member.employee.user.email")
-    description = serializers.SerializerMethodField()
-    status = DictMixinSerializer()
-
-    class Meta:
-        model = ReplacementMember
-        fields = ("id", "full_name", "username", "email", "status", "description")
-
-    def get_description(self, instance):
-        if not instance.break_start:
-            return None
-
-        now = datetime.datetime.now().astimezone()
-        break_start = datetime.datetime.combine(now.date(), instance.break_start).astimezone()
-        break_end = datetime.datetime.combine(now.date(), instance.break_end).astimezone()
-
-        if break_start > now:
-            delta = break_start - now
-            return f"Обед начнется через {convert_timedelta_to_str_time(delta)}"
-        elif break_end > now:
-            delta = break_end - now
-            return f"Обед закончится через {convert_timedelta_to_str_time(delta)}"
-
-        return None
 
 
 class BreakForReplacementSerializer(ExtendedModelSerializer):
@@ -326,12 +278,7 @@ class ReplacementCreateSerializer(InfoModelSerializer):
 
     def validate(self, attrs):
         # Check params
-        required_fields = (
-            "break_start",
-            "break_end",
-            "break_max_duration",
-            "min_active",
-        )
+        required_fields = ("break_start", "break_end", "break_max_duration", "min_active")
         for field in required_fields:
             try:
                 from_default = getattr(attrs["group"].breaks_info, field)
@@ -343,40 +290,41 @@ class ReplacementCreateSerializer(InfoModelSerializer):
 
             if not field_data:
                 field_name = getattr(self.Meta.model, field).field.verbose_name
-                raise ParseError(f"{field_name} - обязательное поле для заполнения.")
+                raise ParseError(f"{field_name} - required field.")
             else:
                 attrs[field] = field_data
 
         # Check times
         if attrs.get("break_start") and attrs.get("break_end"):
             if attrs.get("break_start") >= attrs.get("break_end"):
-                raise ParseError("Время начала перерыва должно быть меньше времени окончания.")
+                raise ParseError("The break start time must be less than the end time.")
 
         # Check duplicates
         if self.Meta.model.objects.filter(group_id=attrs["group"].pk, date=attrs["date"]).exists():
-            raise ParseError("На этот день уже существует активная смена.")
+            raise ParseError("Today there is already an active shift.")
         return attrs
 
     def validate_group(self, value):
-        my_groups = Group.objects.my_groups_admin()
+        user = self.context["request"].user
+        my_groups = Group.objects.my_groups_admin(user)
         if value not in my_groups:
-            raise ParseError("У вас нет полномочий создавать смены в этой группе.")
+            raise ParseError("You do not have permission to create shifts in this group.")
         return value
 
     def validate_date(self, value):
         now = timezone.now().date()
         if value < now:
-            raise ParseError("Дата смены должна быть больше или равна текущей дате.")
+            raise ParseError("The change date must be greater than or equal to the current date.")
         return value
 
     def validate_break_start(self, value):
         if value.minute % 15 > 0:
-            raise ParseError("Время начала перерыва должно быть кратно 15 минутам.")
+            raise ParseError("The start time of the break must be a multiple of 15 minutes.")
         return value
 
     def validate_break_end(self, value):
         if value.minute % 15 > 0:
-            raise ParseError("Время окончания перерыва должно быть кратно 15 минутам.")
+            raise ParseError("The end time of the break must be a multiple of 15 minutes.")
         return value
 
 
@@ -437,7 +385,7 @@ class ReplacementUpdateSerializer(InfoModelSerializer):
             break_start = attrs.get("break_start") or self.instance.break_start
             break_end = attrs.get("break_end") or self.instance.break_end
             if break_start >= break_end:
-                raise ParseError("Время начала перерыва должно быть меньше времени окончания.")
+                raise ParseError("The break start time must be less than the end time.")
 
         # Check duplicates
         if (
@@ -446,23 +394,23 @@ class ReplacementUpdateSerializer(InfoModelSerializer):
             .exclude(pk=self.instance.pk)
             .exists()
         ):
-            raise ParseError("На этот день уже существует активная смена.")
+            raise ParseError("Today there is already an active shift.")
         return attrs
 
     def validate_date(self, value):
         now = timezone.now().date()
         if value < now:
-            raise ParseError("Дата смены должна быть больше или равна текущей дате.")
+            raise ParseError("The change date must be greater than or equal to the current date.")
         return value
 
     def validate_break_start(self, value):
         if value.minute % 15 > 0:
-            raise ParseError("Время начала перерыва должно быть кратно 15 минутам.")
+            raise ParseError("The start time of the break must be a multiple of 15 minutes.")
         return value
 
     def validate_break_end(self, value):
         if value.minute % 15 > 0:
-            raise ParseError("Время окончания перерыва должно быть кратно 15 минутам.")
+            raise ParseError("The end time of the break must be a multiple of 15 minutes.")
         return value
 
 
@@ -482,14 +430,14 @@ class ReplacementMemberUpdateSerializer(InfoModelSerializer):
     def validate_status(self, value):
         now = datetime.datetime.now().astimezone().date()
         if self.instance.replacement.date != now:
-            raise ParseError("Смена ещё не началась или уже завершилась.")
+            raise ParseError("The shift has not yet begun or has already ended.")
 
         value_code = value.code
         instance_value_code = self.instance.status_id
         if value_code == REPLACEMENT_MEMBER_ONLINE:
             if self.instance.time_offline:
-                raise ParseError("Вы уже завершили смену.")
+                raise ParseError("You have already completed your shift.")
         elif value == REPLACEMENT_MEMBER_OFFLINE:
             if instance_value_code != REPLACEMENT_MEMBER_ONLINE:
-                raise ParseError("Невозможно завершить смену. " "Проверьте все незавершенные активности смены.")
+                raise ParseError("Unable to end shift. Check all pending shift activities")
         return value

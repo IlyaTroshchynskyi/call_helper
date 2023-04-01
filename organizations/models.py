@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.utils import timezone
 
 from django.contrib.auth import get_user_model
@@ -35,6 +36,14 @@ class Organization(InfoMixin):
         return obj
 
 
+class GroupManager(models.Manager):
+    def my_groups(self, user):
+        return self.filter(Q(organisation__director=user) | Q(organisation__employees=user))
+
+    def my_groups_admin(self, user):
+        return self.filter(Q(organisation__director=user) | Q(manager__user=user))
+
+
 class Group(InfoMixin):
     organization = models.ForeignKey(Organization, models.CASCADE, "groups", verbose_name="Organizations")
     name = models.CharField("Name", max_length=255)
@@ -46,6 +55,7 @@ class Group(InfoMixin):
         blank=True,
         through="Member",
     )
+    objects = GroupManager()
 
     class Meta:
         verbose_name = "Group"

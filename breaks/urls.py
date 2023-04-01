@@ -5,10 +5,13 @@ from breaks import views
 
 router = DefaultRouter()
 
-router.register(r"statuses/breaks", views.BreakStatusView, "breaks-statuses")
+router.register(r"replacements", views.ReplacementView, "replacements")
+router.register(r"replacements/(?P<pk>\d+)/schedule", views.BreakScheduleView, "breaks-schedule")
 router.register(r"statuses/replacements", views.ReplacementStatusView, "replacement-statuses")
 
 
-urlpatterns = []
-
-urlpatterns += (path("organisations/", include(router.urls)),)
+urlpatterns = [
+    path("breaks/replacements/<int:pk>/member/", views.MeReplacementMemberView.as_view(), name="replacement-member"),
+    path("breaks/replacements/<int:pk>/break/", views.BreakMeView.as_view(), name="break-me"),
+    path("organisations/", include(router.urls)),
+]

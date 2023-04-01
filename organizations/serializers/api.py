@@ -3,7 +3,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ParseError
 
-from breaks.serializers import BreakSettingsSerializer
+from breaks.serializers.breaks import BreakSettingsSerializer
 from common.serializers import ExtendedModelSerializer, StatusMixinSerializer, InfoModelSerializer
 from organizations.constants import DIRECTOR_POSITION, OPERATOR_POSITION
 from organizations.models import Position, Organization, Employee, Group, Offer, Member

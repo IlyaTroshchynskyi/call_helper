@@ -93,8 +93,8 @@ class ReplacementEmployee(models.Model):
 
 
 class Break(models.Model):
+    member = models.ForeignKey("breaks.ReplacementMember", models.CASCADE, "breaks", verbose_name="Shift member")
     replacement = models.ForeignKey(Replacement, models.CASCADE, "breaks", verbose_name="Replacement")
-    employee = models.ForeignKey(User, models.CASCADE, "breaks", verbose_name="Employees")
     break_start = models.TimeField("Start break", null=True, blank=True)
     break_end = models.TimeField("End break", null=True, blank=True)
     status = models.ForeignKey(BreakStatus, models.RESTRICT, "breaks", verbose_name="Status", blank=True)
@@ -105,7 +105,7 @@ class Break(models.Model):
         ordering = ("-replacement__date", "break_start")
 
     def __str__(self):
-        return f"Break of user{ self.employee} ({self.pk})"
+        return f"Break of user{ self.member} ({self.pk})"
 
     def save(self, *args, **kwargs):
         if not self.pk:
@@ -120,18 +120,18 @@ class ReplacementMember(models.Model):
     member = models.ForeignKey("organizations.Member", models.CASCADE, "replacements_info", verbose_name="Сотрудник")
     replacement = models.ForeignKey("breaks.Replacement", models.CASCADE, "members_info", verbose_name="Смена")
     status = models.ForeignKey(
-        "breaks.ReplacementStatus", models.RESTRICT, "members", verbose_name="Статус", blank=True
+        "breaks.ReplacementStatus", models.RESTRICT, "members", verbose_name="Status", blank=True
     )
 
-    time_online = models.DateTimeField("Начал смену", null=True, blank=True, editable=False)
-    time_offline = models.DateTimeField("Закончил смену", null=True, blank=True, editable=False)
-    time_break_start = models.DateTimeField("Ушел на обед", null=True, blank=True, editable=False)
-    time_break_end = models.DateTimeField("Вернулся с обеда", null=True, blank=True, editable=False)
+    time_online = models.DateTimeField("Started shift", null=True, blank=True, editable=False)
+    time_offline = models.DateTimeField("Finished my shift", null=True, blank=True, editable=False)
+    time_break_start = models.DateTimeField("Gone for lunch", null=True, blank=True, editable=False)
+    time_break_end = models.DateTimeField("Came back from lunch", null=True, blank=True, editable=False)
     tracker = FieldTracker()
 
     class Meta:
-        verbose_name = "Смена - участник группы"
-        verbose_name_plural = "Смены - участники группы"
+        verbose_name = "Change - group member"
+        verbose_name_plural = "Changes - group members"
 
     def __str__(self):
         return f"Участник смены {self.member.employee.user.full_name} ({self.pk})"
