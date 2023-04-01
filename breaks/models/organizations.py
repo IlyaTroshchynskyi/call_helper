@@ -1,7 +1,16 @@
+from time import timezone
+
 from django.contrib.auth import get_user_model
 from django.db import models
+from model_utils import FieldTracker
 
-from breaks.constants import BREAK_CREATED_STATUS, BREAK_CREATED_DEFAULT
+from breaks.constants import (
+    BREAK_CREATED_STATUS,
+    BREAK_CREATED_DEFAULT,
+    REPLACEMENT_MEMBER_OFFLINE,
+    REPLACEMENT_MEMBER_ONLINE,
+    REPLACEMENT_MEMBER_BREAK,
+)
 from common.models import BaseDictModelMixin
 
 User = get_user_model()
@@ -15,14 +24,10 @@ class GroupInfo(models.Model):
         verbose_name="Group",
         primary_key=True,
     )
-    min_active = models.PositiveSmallIntegerField(
-        "Min count active employees", null=True, blank=True
-    )
+    min_active = models.PositiveSmallIntegerField("Min count active employees", null=True, blank=True)
     break_start = models.TimeField("Start break", null=True, blank=True)
     break_end = models.TimeField("End break", null=True, blank=True)
-    break_max_duration = models.PositiveSmallIntegerField(
-        "Max duration of break", null=True, blank=True
-    )
+    break_max_duration = models.PositiveSmallIntegerField("Max duration of break", null=True, blank=True)
 
     class Meta:
         verbose_name = "Parameter Launch Break"
@@ -33,13 +38,20 @@ class GroupInfo(models.Model):
 
 
 class Replacement(models.Model):
-    group = models.ForeignKey(
-        "breaks.GroupInfo", models.CASCADE, "replacements", verbose_name="Group"
-    )
+    group = models.ForeignKey("breaks.GroupInfo", models.CASCADE, "replacements", verbose_name="Group")
     date = models.DateField("Date of replacement")
     break_start = models.TimeField("Start break")
     break_end = models.TimeField("End break")
     break_max_duration = models.PositiveSmallIntegerField("Max time of duration break")
+    min_active = models.PositiveSmallIntegerField(
+        "Min. number of active employees",
+        null=True,
+        blank=True,
+    )
+
+    members = models.ManyToManyField(
+        "organizations.Member", related_name="replacements", verbose_name="Shift members", through="ReplacementMember"
+    )
 
     class Meta:
         verbose_name = "Replacement"
@@ -64,9 +76,7 @@ class BreakStatus(BaseDictModelMixin):
 
 class ReplacementEmployee(models.Model):
     employee = models.ForeignKey(User, models.CASCADE, "replacements", verbose_name="Employees")
-    replacement = models.ForeignKey(
-        Replacement, models.CASCADE, "employees", verbose_name="Replacement"
-    )
+    replacement = models.ForeignKey(Replacement, models.CASCADE, "employees", verbose_name="Replacement")
     status = models.ForeignKey(
         ReplacementStatus,
         models.CASCADE,
@@ -83,15 +93,11 @@ class ReplacementEmployee(models.Model):
 
 
 class Break(models.Model):
-    replacement = models.ForeignKey(
-        Replacement, models.CASCADE, "breaks", verbose_name="Replacement"
-    )
+    replacement = models.ForeignKey(Replacement, models.CASCADE, "breaks", verbose_name="Replacement")
     employee = models.ForeignKey(User, models.CASCADE, "breaks", verbose_name="Employees")
     break_start = models.TimeField("Start break", null=True, blank=True)
     break_end = models.TimeField("End break", null=True, blank=True)
-    status = models.ForeignKey(
-        BreakStatus, models.RESTRICT, "breaks", verbose_name="Status", blank=True
-    )
+    status = models.ForeignKey(BreakStatus, models.RESTRICT, "breaks", verbose_name="Status", blank=True)
 
     class Meta:
         verbose_name = "Lunch break"
@@ -108,3 +114,47 @@ class Break(models.Model):
             )
             self.status = status
         return super().save(*args, **kwargs)
+
+
+class ReplacementMember(models.Model):
+    member = models.ForeignKey("organizations.Member", models.CASCADE, "replacements_info", verbose_name="Сотрудник")
+    replacement = models.ForeignKey("breaks.Replacement", models.CASCADE, "members_info", verbose_name="Смена")
+    status = models.ForeignKey(
+        "breaks.ReplacementStatus", models.RESTRICT, "members", verbose_name="Статус", blank=True
+    )
+
+    time_online = models.DateTimeField("Начал смену", null=True, blank=True, editable=False)
+    time_offline = models.DateTimeField("Закончил смену", null=True, blank=True, editable=False)
+    time_break_start = models.DateTimeField("Ушел на обед", null=True, blank=True, editable=False)
+    time_break_end = models.DateTimeField("Вернулся с обеда", null=True, blank=True, editable=False)
+    tracker = FieldTracker()
+
+    class Meta:
+        verbose_name = "Смена - участник группы"
+        verbose_name_plural = "Смены - участники группы"
+
+    def __str__(self):
+        return f"Участник смены {self.member.employee.user.full_name} ({self.pk})"
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.status_id = REPLACEMENT_MEMBER_OFFLINE
+        else:
+            if self.tracker.has_changed("status_id"):
+                now = timezone.now()
+
+                if self.status_id == REPLACEMENT_MEMBER_ONLINE:
+                    if not self.time_online:
+                        self.time_online = now
+                    if self.time_break_start and not self.time_break_end:
+                        self.time_break_end = now
+
+                if self.status_id == REPLACEMENT_MEMBER_BREAK and not self.time_break_start:
+                    self.time_break_start = now
+
+                if self.status_id == REPLACEMENT_MEMBER_OFFLINE:
+                    if not self.time_offline:
+                        self.time_offline = now
+                    if self.time_break_start and not self.time_break_end:
+                        self.time_break_end = now
+        super().save(*args, **kwargs)

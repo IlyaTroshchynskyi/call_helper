@@ -13,8 +13,7 @@ class ExtendedModelSerializer(serializers.ModelSerializer):
 
     def get_from_url(self, lookup_field):
         assert "view" in self.context, (
-            'No view context in "%s". '
-            "Check parameter context on function calling." % self.__class__.__name__
+            'No view context in "%s". ' "Check parameter context on function calling." % self.__class__.__name__
         )
         assert self.context["view"].kwargs.get(lookup_field), (
             'Got no data from url in  "%s". ' "Check lookup field on function calling."
@@ -39,3 +38,9 @@ class InfoModelSerializer(ExtendedModelSerializer):
 class StatusMixinSerializer(serializers.Serializer):
     code = serializers.CharField()
     name = serializers.CharField()
+
+
+class DictMixinSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name = serializers.CharField()
+    color = serializers.CharField()

@@ -14,13 +14,9 @@ class OfferFactory:
             self.model.objects.select_related("user")
             .prefetch_related("organisation")
             .annotate(
-                offer_type=Case(
-                    When(~Q(created_by=F("user")), then=Value("sent")), default=Value("received")
-                ),
+                offer_type=Case(When(~Q(created_by=F("user")), then=Value("sent")), default=Value("received")),
                 can_accept=Case(
-                    When(
-                        Q(offer_type="sent", user_accept__isnull=True, org_accept=False), then=True
-                    ),
+                    When(Q(offer_type="sent", user_accept__isnull=True, org_accept=False), then=True),
                     When(
                         Q(offer_type="received", user_accept=True, org_accept__isnull=True),
                         then=True,
@@ -45,9 +41,7 @@ class OfferFactory:
             .prefetch_related("organisation")
             .filter(user=self.user)
             .annotate(
-                offer_type=Case(
-                    When(Q(created_by=F("user")), then=Value("sent")), default=Value("received")
-                ),
+                offer_type=Case(When(Q(created_by=F("user")), then=Value("sent")), default=Value("received")),
                 can_accept=Case(
                     When(Q(offer_type=True, org_accept__isnull=True, user_accept=False), then=True),
                     When(Q(offer_type=False, org_accept=True, user_accept__isnull=True), then=True),

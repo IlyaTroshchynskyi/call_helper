@@ -17,9 +17,7 @@ class OrganisationFilter(django_filters.FilterSet):
 
 
 class EmployeeFilter(django_filters.FilterSet):
-    only_corporate = django_filters.BooleanFilter(
-        "user__is_corporate_account", label="Is corporate account"
-    )
+    only_corporate = django_filters.BooleanFilter("user__is_corporate_account", label="Is corporate account")
     can_be_group_manager = django_filters.BooleanFilter(
         method="can_be_group_manager_filter", label="Can be group manager"
     )
@@ -57,9 +55,7 @@ class OfferOrgFilter(django_filters.FilterSet):
 
     type = django_filters.ChoiceFilter(method="type_filter", choices=TYPE_CHOICES, label="type")
 
-    decision = django_filters.ChoiceFilter(
-        method="decision_filter", choices=DECISION_CHOICES, label="decision"
-    )
+    decision = django_filters.ChoiceFilter(method="decision_filter", choices=DECISION_CHOICES, label="decision")
 
     class Meta:
         model = Offer
@@ -103,9 +99,7 @@ class OfferUserFilter(django_filters.FilterSet):
     can_reject = django_filters.BooleanFilter("can_reject")
 
     type = django_filters.ChoiceFilter(method="type_filter", choices=TYPE_CHOICES, label="type")
-    decision = django_filters.ChoiceFilter(
-        method="decision_filter", choices=DECISION_CHOICES, label="decision"
-    )
+    decision = django_filters.ChoiceFilter(method="decision_filter", choices=DECISION_CHOICES, label="decision")
 
     class Meta:
         model = Offer

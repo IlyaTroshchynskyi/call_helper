@@ -35,9 +35,7 @@ class UsersApiTestCase(APITestCase):
         }
 
         json_data = json.dumps(test_data)
-        response = self.client.post(
-            reverse("api:reg"), data=json_data, content_type="application/json"
-        )
+        response = self.client.post(reverse("api:reg"), data=json_data, content_type="application/json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual("Test_Reg", response.data.get("first_name"))
@@ -49,9 +47,7 @@ class UsersApiTestCase(APITestCase):
         test_data = {"old_password": "Strong12345", "new_password": "Strong123new"}
 
         json_data = json.dumps(test_data)
-        response = self.client.post(
-            reverse("api:change_passwd"), data=json_data, content_type="application/json"
-        )
+        response = self.client.post(reverse("api:change_passwd"), data=json_data, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_get_me(self):
@@ -73,9 +69,7 @@ class UsersApiTestCase(APITestCase):
         }
         json_data = json.dumps(data)
         self.client.force_login(self.user_1)
-        response = self.client.patch(
-            reverse("api:me"), data=json_data, content_type="application/json"
-        )
+        response = self.client.patch(reverse("api:me"), data=json_data, content_type="application/json")
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.user_1.refresh_from_db()
         self.assertEqual(self.user_1.first_name, "Updated")
@@ -84,17 +78,11 @@ class UsersApiTestCase(APITestCase):
         data = {"first_name": "Updated_new", "profile": {"telegram_id": "1" * 21}}
         json_data = json.dumps(data)
         self.client.force_login(self.user_1)
-        response = self.client.patch(
-            reverse("api:me"), data=json_data, content_type="application/json"
-        )
+        response = self.client.patch(reverse("api:me"), data=json_data, content_type="application/json")
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         self.user_1.refresh_from_db()
         self.assertEqual(self.user_1.first_name, "Test_Reg")
         self.assertEqual(
             response.data["profile"]["telegram_id"],
-            [
-                ErrorDetail(
-                    string="Ensure this field has no more than 20 characters.", code="max_length"
-                )
-            ],
+            [ErrorDetail(string="Ensure this field has no more than 20 characters.", code="max_length")],
         )

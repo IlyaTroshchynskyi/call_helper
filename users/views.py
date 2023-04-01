@@ -20,9 +20,7 @@ from users.serializers import (
 User = get_user_model()
 
 
-@extend_schema_view(
-    post=extend_schema(summary="Registration of user", tags=["Authentication and Authorization"])
-)
+@extend_schema_view(post=extend_schema(summary="Registration of user", tags=["Authentication and Authorization"]))
 class RegistrationView(CreateAPIView):
     queryset = User.objects
     permission_classes = [AllowAny]

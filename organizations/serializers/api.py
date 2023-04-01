@@ -6,7 +6,10 @@ from rest_framework.exceptions import ParseError
 from breaks.serializers import BreakSettingsSerializer
 from common.serializers import ExtendedModelSerializer, StatusMixinSerializer, InfoModelSerializer
 from organizations.constants import DIRECTOR_POSITION, OPERATOR_POSITION
-from organizations.models import Position, Organization, Employee, Group, Offer
+from organizations.models import Position, Organization, Employee, Group, Offer, Member
+from organizations.serializers.nested.dicts import PositionShortSerializer
+from organizations.serializers.nested.employees import EmployeeShortSerializer
+from organizations.serializers.nested.organisations import OrganisationShortSerializer
 from users.serializers import UserShortSerializer
 
 User = get_user_model()
@@ -68,9 +71,7 @@ class OrganisationCreateSerializer(ExtendedModelSerializer):
     def create(self, validated_data):
         with transaction.atomic():
             instance = super().create(validated_data)
-            instance.employees.add(
-                validated_data["director"], through_defaults={"position_id": DIRECTOR_POSITION}
-            )
+            instance.employees.add(validated_data["director"], through_defaults={"position_id": DIRECTOR_POSITION})
         return instance
 
 
@@ -78,20 +79,6 @@ class OrganisationUpdateSerializer(ExtendedModelSerializer):
     class Meta:
         model = Organization
         fields = ("id", "name")
-
-
-class PositionShortSerializer(StatusMixinSerializer):
-    class Meta:
-        model = Position
-
-
-class EmployeeShortSerializer(ExtendedModelSerializer):
-    user = UserShortSerializer()
-    position = PositionShortSerializer()
-
-    class Meta:
-        fields = ("id", "user", "position")
-        model = Employee
 
 
 class EmployeeSearchSerializer(ExtendedModelSerializer):
@@ -206,12 +193,6 @@ class EmployeeDeleteSerializer(serializers.Serializer):
         return attrs
 
 
-class OrganisationShortSerializer(ExtendedModelSerializer):
-    class Meta:
-        model = Organization
-        fields = ("id", "name")
-
-
 class GroupListSerializer(InfoModelSerializer):
     organisation = OrganisationShortSerializer()
     manager = EmployeeShortSerializer()
@@ -276,9 +257,7 @@ class GroupCreateSerializer(ExtendedModelSerializer):
         manager = attrs["manager"]
         # Check manager
         if manager not in org.employees_info.all():
-            raise ParseError(
-                "Only an employee of the organization or a manager can be an administrator."
-            )
+            raise ParseError("Only an employee of the organization or a manager can be an administrator.")
 
         # Check name duplicate
         if self.Meta.model.objects.filter(organisation=org, name=attrs["name"]).exists():
@@ -314,9 +293,7 @@ class GroupSettingsUpdateSerializer(ExtendedModelSerializer):
     def _update_group_profile(self, param, validated_data):
         if param in self.fields:
             serializer = self.fields[param]
-            instance, c = serializer.Meta.model.objects.get_or_create(
-                group_id=self.get_from_url("pk")
-            )
+            instance, c = serializer.Meta.model.objects.get_or_create(group_id=self.get_from_url("pk"))
             serializer.update(instance, validated_data)
         return
 
@@ -329,16 +306,7 @@ class OfferOrgToUserListSerializer(InfoModelSerializer):
 
     class Meta:
         model = Offer
-        fields = (
-            "id",
-            "org_accept",
-            "user",
-            "user_accept",
-            "created_at",
-            "updated_at",
-            "can_accept",
-            "can_reject",
-        )
+        fields = ("id", "org_accept", "user", "user_accept", "created_at", "updated_at", "can_accept", "can_reject")
 
 
 class OfferOrgToUserCreateSerializer(ExtendedModelSerializer):
@@ -359,12 +327,8 @@ class OfferOrgToUserCreateSerializer(ExtendedModelSerializer):
         # check offer create already
         offers_exist = self.Meta.model.objects.filter(user__in=users, organisation=organisation)
         if offers_exist:
-            user_error = "\n".join(
-                [f"{offer.user.full_name} ({offer.user.email})" for offer in offers_exist]
-            )
-            raise ParseError(
-                f"The following users have already been invited before:\n" f"{user_error}"
-            )
+            user_error = "\n".join([f"{offer.user.full_name} ({offer.user.email})" for offer in offers_exist])
+            raise ParseError(f"The following users have already been invited before:\n" f"{user_error}")
         # check user in org already
         users_in_orgs = organisation.employees_info.filter(user__in=users)
         if users_in_orgs:
@@ -484,7 +448,66 @@ class OfferUserToOrgUpdateSerializer(ExtendedModelSerializer):
 
             # Create employee
             if instance.user_accept and instance.org_accept:
-                instance.organisation.employees.add(
-                    instance.user, through_defaults={"position_id": OPERATOR_POSITION}
-                )
+                instance.organisation.employees.add(instance.user, through_defaults={"position_id": OPERATOR_POSITION})
         return instance
+
+
+class MemberSearchSerializer(ExtendedModelSerializer):
+    full_name = serializers.CharField(source="employee.user.full_name")
+    username = serializers.CharField(source="employee.user.username")
+    position = PositionShortSerializer(source="employee.position")
+
+    class Meta:
+        model = Member
+        fields = ("id", "full_name", "username", "position")
+
+
+class MemberListSerializer(ExtendedModelSerializer):
+    employee = EmployeeShortSerializer()
+
+    class Meta:
+        model = Member
+        fields = ("id", "employee", "date_joined")
+
+
+class MemberRetrieveSerializer(ExtendedModelSerializer):
+    employee = EmployeeShortSerializer()
+
+    class Meta:
+        model = Member
+        fields = ("id", "employee", "date_joined")
+
+
+class MemberCreateSerializer(ExtendedModelSerializer):
+    employees = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), many=True, write_only=True)
+
+    class Meta:
+        model = Member
+        fields = ("id", "employees")
+
+    def validate(self, attrs):
+        try:
+            group = self.get_object_from_url(Group)
+            organisation = group.organisation
+        except:
+            raise ParseError("Oops, something's wrong. Current organization not found.")
+
+        attrs["group"] = group
+
+        employees = attrs["employees"]
+        employees_id_set = {obj.pk for obj in employees}
+
+        org_employees = organisation.employees_info.all()
+        org_employees_id_set = {obj.pk for obj in org_employees}
+
+        # Check employees from request exist in org
+        if employees_id_set - org_employees_id_set:
+            raise ParseError("Some of these employees do not exist in the organization. Check the entered data")
+
+        return attrs
+
+    def create(self, validated_data):
+        employees = validated_data.pop("employees")
+        group = validated_data.pop("group")
+        group.members.set(employees)
+        return group

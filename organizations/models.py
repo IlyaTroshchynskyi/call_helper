@@ -31,16 +31,12 @@ class Organization(InfoMixin):
 
     @property
     def director_employee(self):
-        obj, create = self.employees_info.get_or_create(
-            position_id=DIRECTOR_POSITION, defaults={"user": self.director}
-        )
+        obj, create = self.employees_info.get_or_create(position_id=DIRECTOR_POSITION, defaults={"user": self.director})
         return obj
 
 
 class Group(InfoMixin):
-    organization = models.ForeignKey(
-        Organization, models.CASCADE, "groups", verbose_name="Organizations"
-    )
+    organization = models.ForeignKey(Organization, models.CASCADE, "groups", verbose_name="Organizations")
     name = models.CharField("Name", max_length=255)
     manager = models.ForeignKey(User, models.RESTRICT, "groups_managers", verbose_name="Manager")
     members = models.ManyToManyField(
@@ -116,9 +112,7 @@ class Member(models.Model):
 
 
 class Offer(InfoMixin):
-    organisation = models.ForeignKey(
-        "Organization", models.RESTRICT, "offers", verbose_name="Organisation"
-    )
+    organisation = models.ForeignKey("Organization", models.RESTRICT, "offers", verbose_name="Organisation")
     org_accept = models.BooleanField("Organization Consent", null=True, blank=True)
     user = models.ForeignKey(User, models.RESTRICT, "offers", verbose_name="User")
     user_accept = models.BooleanField("User Consent", null=True, blank=True)

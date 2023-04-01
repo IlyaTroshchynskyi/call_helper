@@ -4,8 +4,8 @@ from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 
-from common.views import StatusListMixinView, ListViewSet, LCRUViewSet, LCRUDViewSet, LCUViewSet
-from organizations.backends import MyOrganisation, OwnedByOrganisation, MyGroup
+from common.views import StatusListMixinView, ListViewSet, LCRUViewSet, LCRUDViewSet, LCUViewSet, LCDViewSet
+from organizations.backends import MyOrganisation, OwnedByOrganisation, MyGroup, OwnedByGroup
 from organizations.factory import OfferFactory
 from organizations.filters import (
     OrganisationFilter,
@@ -14,9 +14,9 @@ from organizations.filters import (
     OfferOrgFilter,
     OfferUserFilter,
 )
-from organizations.models import Position, Organization, Employee, Group, Offer
+from organizations.models import Position, Organization, Employee, Group, Offer, Member
 from organizations.permissions import IsMyOrganisation, IsColleagues, IsMyGroup, IsOfferManager
-from organizations.serializers import (
+from organizations.serializers.api import (
     OrganisationSearchListSerializer,
     OrganisationListSerializer,
     OrganisationRetrieveSerializer,
@@ -39,6 +39,9 @@ from organizations.serializers import (
     OfferUserToOrgListSerializer,
     OfferUserToOrgCreateSerializer,
     OfferUserToOrgUpdateSerializer,
+    MemberListSerializer,
+    MemberCreateSerializer,
+    MemberSearchSerializer,
 )
 
 
@@ -99,17 +102,11 @@ class OrganisationView(LCRUViewSet):
 
 @extend_schema_view(
     list=extend_schema(summary="List employees of organisation", tags=["Organisation: Employee"]),
-    retrieve=extend_schema(
-        summary="Detail employee of organisation", tags=["Organisation: Employee"]
-    ),
+    retrieve=extend_schema(summary="Detail employee of organisation", tags=["Organisation: Employee"]),
     create=extend_schema(summary="Create employee of organisation", tags=["Organisation: Employee"]),
     update=extend_schema(summary="Update employee of organisation", tags=["Organisation: Employee"]),
-    partial_update=extend_schema(
-        summary="Update employee of organisation partial", tags=["Organisation: Employee"]
-    ),
-    destroy=extend_schema(
-        summary="Delete employee from organisation", tags=["Organisation: Employee"]
-    ),
+    partial_update=extend_schema(summary="Update employee of organisation partial", tags=["Organisation: Employee"]),
+    destroy=extend_schema(summary="Delete employee from organisation", tags=["Organisation: Employee"]),
     search=extend_schema(
         filters=True,
         summary="List employees of organisation Search",
@@ -158,12 +155,12 @@ class EmployeeView(LCRUDViewSet):
 
 
 @extend_schema_view(
-    list=extend_schema(summary="Список групп", tags=["Организации: Группы"]),
-    retrieve=extend_schema(summary="Деталка группы", tags=["Организации: Группы"]),
-    create=extend_schema(summary="Создать группу", tags=["Организации: Группы"]),
-    update=extend_schema(summary="Изменить группу", tags=["Организации: Группы"]),
-    partial_update=extend_schema(summary="Изменить группу частично", tags=["Организации: Группы"]),
-    update_settings=extend_schema(summary="Изменить настройки группы", tags=["Организации: Группы"]),
+    list=extend_schema(summary="Group list", tags=["Organizations: Groups"]),
+    retrieve=extend_schema(summary="Group detail", tags=["Organizations: Groups"]),
+    create=extend_schema(summary="Создать группу", tags=["Organizations: Groups"]),
+    update=extend_schema(summary="To create a group", tags=["Organizations: Groups"]),
+    partial_update=extend_schema(summary="Change group partially", tags=["Organizations: Groups"]),
+    update_settings=extend_schema(summary="Change group settings", tags=["Organizations: Groups"]),
 )
 class GroupView(LCRUViewSet):
     permission_classes = [IsMyGroup]
@@ -195,8 +192,7 @@ class GroupView(LCRUViewSet):
                 pax=Count("members", distinct=True),
                 can_manage=Case(
                     When(
-                        Q(manager__user=self.request.user)
-                        | Q(organisation__director=self.request.user),
+                        Q(manager__user=self.request.user) | Q(organisation__director=self.request.user),
                         then=True,
                     ),
                     default=False,
@@ -222,9 +218,7 @@ class GroupView(LCRUViewSet):
 @extend_schema_view(
     list=extend_schema(summary="List offers of organisation", tags=["Organisation: Offers"]),
     create=extend_schema(summary="Create offer to user", tags=["Organisation: Offers"]),
-    partial_update=extend_schema(
-        summary="Change  user's offer partially", tags=["Organisation: Offers"]
-    ),
+    partial_update=extend_schema(summary="Change  user's offer partially", tags=["Organisation: Offers"]),
 )
 class OfferOrganisationView(LCUViewSet):
     permission_classes = [IsOfferManager]
@@ -256,9 +250,7 @@ class OfferOrganisationView(LCUViewSet):
 @extend_schema_view(
     list=extend_schema(summary="List offers of users", tags=["Organisation: Offers"]),
     create=extend_schema(summary="Create offer to organisation", tags=["Organisation: Offers"]),
-    partial_update=extend_schema(
-        summary="Change offer to organisation partially", tags=["Organisation: Offers"]
-    ),
+    partial_update=extend_schema(summary="Change offer to organisation partially", tags=["Organisation: Offers"]),
 )
 class OfferUserView(LCUViewSet):
     queryset = Offer.objects.all()
@@ -277,3 +269,42 @@ class OfferUserView(LCUViewSet):
 
     def get_queryset(self):
         return OfferFactory(self.request.user).user_list()
+
+
+@extend_schema_view(
+    list=extend_schema(summary="List of group members", tags=["Organizations: Groups: Members"]),
+    create=extend_schema(summary="Create a group member", tags=["Organizations: Groups: Members"]),
+    destroy=extend_schema(summary="Remove a member from a group", tags=["Organizations: Groups: Members"]),
+    search=extend_schema(filters=True, summary="List of group members Search", tags=["Api"]),
+)
+class MemberView(LCDViewSet):
+    permission_classes = [IsColleagues]
+
+    queryset = Member.objects.all()
+    serializer_class = MemberListSerializer
+
+    multi_serializer_class = {
+        "list": MemberListSerializer,
+        "create": MemberCreateSerializer,
+        "search": MemberSearchSerializer,
+    }
+
+    lookup_url_kwarg = "member_id"
+
+    filter_backends = (OwnedByGroup,)
+
+    def get_queryset(self):
+        qs = Member.objects.select_related(
+            "employee",
+        ).prefetch_related(
+            "group",
+            "employee__user",
+            "employee__organisation",
+            "employee__organisation",
+            "employee__position",
+        )
+        return qs
+
+    @action(methods=["GET"], detail=False, url_path="search")
+    def search(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
