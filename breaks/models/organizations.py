@@ -1,8 +1,12 @@
+from datetime import datetime, timedelta
 from time import timezone
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Subquery, OuterRef, ExpressionWrapper, F, DateTimeField, Count, Q
 from model_utils import FieldTracker
+from django_generate_series.models import generate_series
+
 
 from breaks.constants import (
     BREAK_CREATED_STATUS,
@@ -60,6 +64,60 @@ class Replacement(models.Model):
 
     def __str__(self):
         return f"Replacement №{self.pk} for {self.group}"
+
+    def free_breaks_available(self, break_start, break_end, exclude_break_id=None):
+        breaks_sub_qs = Subquery(
+            Break.objects.filter(replacement=OuterRef("pk"))
+            .exclude(pk=exclude_break_id)
+            .annotate(
+                start_datetime=ExpressionWrapper(OuterRef("date") + F("break_start"), output_field=DateTimeField()),
+                end_datetime=ExpressionWrapper(OuterRef("date") + F("break_end"), output_field=DateTimeField()),
+            )
+            .filter(
+                start_datetime__lte=OuterRef("timeline"),
+                end_datetime__gt=OuterRef("timeline"),
+            )
+            .values("pk")
+        )
+
+        replacement_sub_qs = (
+            self.__class__.objects.filter(pk=self.pk)
+            .annotate(timeline=OuterRef("term"))
+            .order_by()
+            .values("timeline")
+            .annotate(
+                pk=F("pk"),
+                breaks=Count("breaks", filter=Q(breaks__id__in=breaks_sub_qs), distinct=True),
+                members_count=Count("members", distinct=True),
+                free_breaks=F("members_count") - F("breaks"),
+            )
+        )
+        start_datetime = datetime.combine(self.date, break_start)
+        end_datetime = datetime.combine(self.date, break_end) - timedelta(minutes=15)
+        data_seq_qs = (
+            generate_series(start_datetime, end_datetime, "15 minutes", output_field=DateTimeField)
+            .annotate(
+                breaks=Subquery(replacement_sub_qs.values("free_breaks")),
+            )
+            .order_by("breaks")
+        )
+        return data_seq_qs.first().breaks
+
+    def get_member_by_user(self, user):
+        return self.members_info.filter(member__employee__user=user).first()
+
+    def get_break_for_user(self, user):
+        return self.breaks.filter(member__member__employee__user=user).first()
+
+    def get_break_status_for_user(self, user):
+        member = self.get_member_by_user(user)
+        break_obj = self.get_break_for_user(user)
+        now = timezone.now().astimezone()
+        if not member or self.date != now.date():
+            return None
+        if not break_obj:
+            return "create"
+        return "update"
 
 
 class ReplacementStatus(BaseDictModelMixin):

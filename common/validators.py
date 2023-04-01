@@ -2,7 +2,7 @@ from rest_framework.exceptions import ParseError
 
 
 class Time15MinutesValidator:
-    message = "Время доллжно быть кратно 15 минутам."
+    message = "The time must be a multiple of 15 minutes."
 
     def __call__(self, value):
         if not value:
