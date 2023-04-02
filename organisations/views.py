@@ -45,16 +45,12 @@ from organisations.serializers.api import (
 )
 
 
-@extend_schema_view(
-    list=extend_schema(summary="List of positions", tags=["Organisation"]),
-)
+@extend_schema_view(list=extend_schema(summary="List of positions", tags=["Organisation"]))
 class PositionView(StatusListMixinView):
     queryset = Position.objects.all()
 
 
-@extend_schema_view(
-    list=extend_schema(summary="List organisations Search", tags=["Organisation"]),
-)
+@extend_schema_view(list=extend_schema(summary="List organisations Search", tags=["Organisation"]))
 class OrganisationSearchView(ListViewSet):
     queryset = Organisation.objects.all()
     serializer_class = OrganisationSearchListSerializer
@@ -108,9 +104,7 @@ class OrganisationView(LCRUViewSet):
     partial_update=extend_schema(summary="Update employee of organisation partial", tags=["Organisation: Employee"]),
     destroy=extend_schema(summary="Delete employee from organisation", tags=["Organisation: Employee"]),
     search=extend_schema(
-        filters=True,
-        summary="List employees of organisation Search",
-        tags=["Organisation: Employee"],
+        filters=True, summary="List employees of organisation Search", tags=["Organisation: Employee"]
     ),
 )
 class EmployeeView(LCRUDViewSet):

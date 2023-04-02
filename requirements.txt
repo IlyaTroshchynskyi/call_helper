@@ -7,3 +7,4 @@ drf-spectacular==0.25.1
 djoser==2.1.0
 django-phonenumber-field[phonenumbers]==7.0.2
 django-model-utils==4.3.1
+django-debug-toolbar==3.8.1

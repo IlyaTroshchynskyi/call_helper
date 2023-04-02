@@ -78,16 +78,7 @@ class MeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = (
-            "id",
-            "first_name",
-            "last_name",
-            "email",
-            "phone_number",
-            "username",
-            "profile",
-            "date_joined",
-        )
+        fields = ("id", "first_name", "last_name", "email", "phone_number", "username", "profile", "date_joined")
 
 
 class MeUpdateSerializer(serializers.ModelSerializer):
@@ -114,19 +105,6 @@ class MeUpdateSerializer(serializers.ModelSerializer):
         profile_serializer.save()
 
 
-#
-#
-# class UserSearchListSerializer(serializers.ModelSerializer):
-#
-#     class Meta:
-#         model = User
-#         fields = (
-#             'id',
-#             'username',
-#             'full_name',
-#         )
-
-
 class UserShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -137,3 +115,9 @@ class UserSearchListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email", "full_name")
+
+
+class UserEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "username", "full_name", "email", "phone_number", "is_corporate_account")

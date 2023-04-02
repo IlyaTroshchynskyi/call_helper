@@ -37,6 +37,7 @@ INSTALLED_APPS += [
     "djoser",
     "phonenumber_field",
     "django_generate_series",
+    "debug_toolbar",
 ]
 
 INSTALLED_APPS += [
@@ -57,6 +58,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -231,3 +233,7 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_LIFETIME": timedelta(minutes=1),
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=7),
 }
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]

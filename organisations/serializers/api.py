@@ -10,7 +10,7 @@ from organisations.models import Position, Organisation, Employee, Group, Offer,
 from organisations.serializers.nested.dicts import PositionShortSerializer
 from organisations.serializers.nested.employees import EmployeeShortSerializer
 from organisations.serializers.nested.organisations import OrganisationShortSerializer
-from users.serializers import UserShortSerializer
+from users.serializers import UserShortSerializer, UserEmployeeSerializer
 
 User = get_user_model()
 
@@ -36,21 +36,13 @@ class OrganisationListSerializer(ExtendedModelSerializer):
 
 class OrganisationRetrieveSerializer(ExtendedModelSerializer):
     director = UserShortSerializer()
-    # pax = serializers.IntegerField()
-    # groups_count = serializers.IntegerField()
-    # can_manage = serializers.BooleanField()
+    pax = serializers.IntegerField()
+    groups_count = serializers.IntegerField()
+    can_manage = serializers.BooleanField()
 
     class Meta:
         model = Organisation
-        fields = (
-            "id",
-            "name",
-            "director",
-            # 'pax',
-            # 'groups_count',
-            # 'created_at',
-            # 'can_manage',
-        )
+        fields = ("id", "name", "director", "pax", "groups_count", "created_at", "can_manage")
 
 
 class OrganisationCreateSerializer(ExtendedModelSerializer):
@@ -82,8 +74,8 @@ class OrganisationUpdateSerializer(ExtendedModelSerializer):
 
 
 class EmployeeSearchSerializer(ExtendedModelSerializer):
-    # user = UserEmployeeSerializer()
-    # position = PositionShortSerializer()
+    user = UserEmployeeSerializer()
+    position = PositionShortSerializer()
 
     class Meta:
         model = Employee
@@ -91,8 +83,8 @@ class EmployeeSearchSerializer(ExtendedModelSerializer):
 
 
 class EmployeeListSerializer(ExtendedModelSerializer):
-    # user = UserEmployeeSerializer()
-    # position = PositionShortSerializer()
+    user = UserEmployeeSerializer()
+    position = PositionShortSerializer()
 
     class Meta:
         model = Employee
@@ -100,8 +92,8 @@ class EmployeeListSerializer(ExtendedModelSerializer):
 
 
 class EmployeeRetrieveSerializer(ExtendedModelSerializer):
-    # user = UserEmployeeSerializer()
-    # position = PositionShortSerializer()
+    user = UserEmployeeSerializer()
+    position = PositionShortSerializer()
 
     class Meta:
         model = Employee
@@ -202,16 +194,7 @@ class GroupListSerializer(InfoModelSerializer):
 
     class Meta:
         model = Group
-        fields = (
-            "id",
-            "name",
-            "manager",
-            "organisation",
-            "pax",
-            "created_at",
-            "can_manage",
-            "is_member",
-        )
+        fields = ("id", "name", "manager", "organisation", "pax", "created_at", "can_manage", "is_member")
 
 
 class GroupRetrieveSerializer(InfoModelSerializer):

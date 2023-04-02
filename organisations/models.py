@@ -5,16 +5,14 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 from common.models import BaseDictModelMixin, InfoMixin
-from organisations.constants import DIRECTOR_POSITION
+from organisations.constants import DIRECTOR_POSITION, MANAGER_POSITION, OPERATOR_POSITION
 
 User = get_user_model()
 
 
 class Organisation(InfoMixin):
     name = models.CharField("Name", max_length=255)
-    director = models.ForeignKey(
-        User, models.RESTRICT,  related_name="organisations_directors", verbose_name="Director"
-    )
+    director = models.ForeignKey(User, models.RESTRICT, related_name="organisations_directors", verbose_name="Director")
     employees = models.ManyToManyField(
         User, "organisations_employees", verbose_name="Employees", blank=True, through="Employee"
     )
@@ -84,23 +82,23 @@ class Employee(models.Model):
     def __str__(self):
         return f"Employee #{self.pk} {self.user}"
 
-    # @property
-    # def is_director(self):
-    #     if self.position_id == DIRECTOR_POSITION:
-    #         return True
-    #     return False
-    #
-    # @property
-    # def is_manager(self):
-    #     if self.position_id == MANAGER_POSITION:
-    #         return True
-    #     return False
-    #
-    # @property
-    # def is_operator(self):
-    #     if self.position_id == OPERATOR_POSITION:
-    #         return True
-    #     return False
+    @property
+    def is_director(self):
+        if self.position_id == DIRECTOR_POSITION:
+            return True
+        return False
+
+    @property
+    def is_manager(self):
+        if self.position_id == MANAGER_POSITION:
+            return True
+        return False
+
+    @property
+    def is_operator(self):
+        if self.position_id == OPERATOR_POSITION:
+            return True
+        return False
 
 
 class Member(models.Model):

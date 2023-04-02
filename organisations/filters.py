@@ -32,7 +32,7 @@ class EmployeeFilter(django_filters.FilterSet):
 
 class GroupFilter(django_filters.FilterSet):
     is_member = django_filters.BooleanFilter("is_member")
-    # can_manage = django_filters.BooleanFilter('can_manage',)
+    can_manage = django_filters.BooleanFilter("can_manage")
 
     class Meta:
         model = Group
