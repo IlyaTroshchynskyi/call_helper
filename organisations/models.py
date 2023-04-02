@@ -5,26 +5,23 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 from common.models import BaseDictModelMixin, InfoMixin
-from organizations.constants import DIRECTOR_POSITION
+from organisations.constants import DIRECTOR_POSITION
 
 User = get_user_model()
 
 
-class Organization(InfoMixin):
+class Organisation(InfoMixin):
     name = models.CharField("Name", max_length=255)
     director = models.ForeignKey(
-        User,
-        models.RESTRICT,
-        related_name="organizations_directors",
-        verbose_name="Director",
+        User, models.RESTRICT,  related_name="organisations_directors", verbose_name="Director"
     )
     employees = models.ManyToManyField(
-        User, "organizations_employees", verbose_name="Employees", blank=True, through="Employee"
+        User, "organisations_employees", verbose_name="Employees", blank=True, through="Employee"
     )
 
     class Meta:
-        verbose_name = "Organization"
-        verbose_name_plural = "Organizations"
+        verbose_name = "Organisation"
+        verbose_name_plural = "Organisations"
         ordering = ("name",)
 
     def __str__(self):
@@ -45,7 +42,7 @@ class GroupManager(models.Manager):
 
 
 class Group(InfoMixin):
-    organization = models.ForeignKey(Organization, models.CASCADE, "groups", verbose_name="Organizations")
+    organisation = models.ForeignKey(Organisation, models.CASCADE, "groups", verbose_name="Organisations")
     name = models.CharField("Name", max_length=255)
     manager = models.ForeignKey(User, models.RESTRICT, "groups_managers", verbose_name="Manager")
     members = models.ManyToManyField(
@@ -73,14 +70,14 @@ class Position(BaseDictModelMixin):
 
 
 class Employee(models.Model):
-    organisation = models.ForeignKey("Organization", models.CASCADE, "employees_info")
+    organisation = models.ForeignKey("Organisation", models.CASCADE, "employees_info")
     user = models.ForeignKey(User, models.CASCADE, "organisations_info")
     position = models.ForeignKey("Position", models.RESTRICT, "employees")
     date_joined = models.DateField("Date joined", default=timezone.now)
 
     class Meta:
-        verbose_name = "Employee organization"
-        verbose_name_plural = "Employee organizations"
+        verbose_name = "Employee organisation"
+        verbose_name_plural = "Employee organisations"
         ordering = ("-date_joined",)
         unique_together = (("organisation", "user"),)
 
@@ -122,8 +119,8 @@ class Member(models.Model):
 
 
 class Offer(InfoMixin):
-    organisation = models.ForeignKey("Organization", models.RESTRICT, "offers", verbose_name="Organisation")
-    org_accept = models.BooleanField("Organization Consent", null=True, blank=True)
+    organisation = models.ForeignKey("Organisation", models.RESTRICT, "offers", verbose_name="Organisation")
+    org_accept = models.BooleanField("Organisation Consent", null=True, blank=True)
     user = models.ForeignKey(User, models.RESTRICT, "offers", verbose_name="User")
     user_accept = models.BooleanField("User Consent", null=True, blank=True)
 

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from breaks.models.organizations import GroupInfo
-from organizations.models import Organization, Group, Position, Employee, Member
+from breaks.models.organisations import GroupInfo
+from organisations.models import Organisation, Group, Position, Employee, Member
 
 
 class EmployeeInline(admin.TabularInline):
@@ -32,7 +32,7 @@ class PositionAdmin(admin.ModelAdmin):
     list_display = ("code", "name", "sort", "is_active")
 
 
-@admin.register(Organization)
+@admin.register(Organisation)
 class OrganisationAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "director")
     filter_vertical = ("employees",)

@@ -1,18 +1,18 @@
 import django_filters
 from django.db.models import Q, F
 
-from organizations.constants import DIRECTOR_POSITION, MANAGER_POSITION
-from organizations.models import Group, Offer
+from organisations.constants import DIRECTOR_POSITION, MANAGER_POSITION
+from organisations.models import Group, Offer
 
-# from organizations.models import Offer
-from organizations.models import Organization, Employee
+# from organization.models import Offer
+from organisations.models import Organisation, Employee
 
 
 class OrganisationFilter(django_filters.FilterSet):
     can_manage = django_filters.BooleanFilter("can_manage", label="Can manage")
 
     class Meta:
-        model = Organization
+        model = Organisation
         fields = ("can_manage", "id")
 
 
@@ -36,7 +36,7 @@ class GroupFilter(django_filters.FilterSet):
 
     class Meta:
         model = Group
-        fields = ("organization", "manager")
+        fields = ("organisation", "manager")
 
 
 class OfferOrgFilter(django_filters.FilterSet):

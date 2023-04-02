@@ -16,7 +16,7 @@ from breaks.constants import (
 )
 from breaks.serializers.breaks import ReplacementMemberShortSerializer
 from common.serializers import ExtendedModelSerializer, StatusMixinSerializer, InfoModelSerializer, DictMixinSerializer
-from breaks.models.organizations import (
+from breaks.models.organisations import (
     ReplacementStatus,
     ReplacementEmployee,
     BreakStatus,
@@ -26,8 +26,8 @@ from breaks.models.organizations import (
     ReplacementMember,
 )
 from common.services import convert_timedelta_to_str_time
-from organizations.models import Group, Member
-from organizations.serializers.nested.groups import GroupShortSerializer
+from organisations.models import Group, Member
+from organisations.serializers.nested.groups import GroupShortSerializer
 
 
 class BreakForReplacementSerializer(ExtendedModelSerializer):

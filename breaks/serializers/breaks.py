@@ -8,7 +8,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ParseError
 
 from breaks.constants import REPLACEMENT_MEMBER_BREAK, REPLACEMENT_MEMBER_OFFLINE, REPLACEMENT_MEMBER_ONLINE
-from breaks.models.organizations import Break, Replacement, ReplacementMember, GroupInfo
+from breaks.models.organisations import Break, Replacement, ReplacementMember, GroupInfo
 from common.serializers import InfoModelSerializer, ExtendedModelSerializer, DictMixinSerializer
 from common.validators import Time15MinutesValidator
 

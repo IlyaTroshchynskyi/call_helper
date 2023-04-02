@@ -2,14 +2,14 @@ import django_filters
 from django.db.models import Q
 from django.utils.datetime_safe import datetime
 
-from breaks.models.organizations import Replacement
+from breaks.models.organisations import Replacement
 
 
 class ReplacementFilter(django_filters.FilterSet):
     CATEGORY_CHOICES = (
-        ("active", "Активные"),
-        ("future", "Предстоящие"),
-        ("archive", "Архив"),
+        ("active", "Active"),
+        ("future", "Future"),
+        ("archive", "Archive"),
     )
 
     category = django_filters.ChoiceFilter(

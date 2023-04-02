@@ -1,6 +1,6 @@
 from common.serializers import ExtendedModelSerializer
-from organizations.models import Employee
-from organizations.serializers.nested.dicts import PositionShortSerializer
+from organisations.models import Employee
+from organisations.serializers.nested.dicts import PositionShortSerializer
 from users.serializers import UserShortSerializer
 
 

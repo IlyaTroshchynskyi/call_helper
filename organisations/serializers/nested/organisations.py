@@ -1,8 +1,8 @@
 from common.serializers import ExtendedModelSerializer
-from organizations.models import Organization
+from organisations.models import Organisation
 
 
 class OrganisationShortSerializer(ExtendedModelSerializer):
     class Meta:
-        model = Organization
+        model = Organisation
         fields = ("id", "name")

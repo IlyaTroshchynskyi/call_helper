@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from time import timezone
+from django.utils import timezone
 
 from django.contrib.auth import get_user_model
 from django.db import models
@@ -22,7 +22,7 @@ User = get_user_model()
 
 class GroupInfo(models.Model):
     group = models.OneToOneField(
-        "organizations.Group",
+        "organisations.Group",
         models.CASCADE,
         related_name="breaks_info",
         verbose_name="Group",
@@ -54,7 +54,7 @@ class Replacement(models.Model):
     )
 
     members = models.ManyToManyField(
-        "organizations.Member", related_name="replacements", verbose_name="Shift members", through="ReplacementMember"
+        "organisations.Member", related_name="replacements", verbose_name="Shift members", through="ReplacementMember"
     )
 
     class Meta:
@@ -175,7 +175,7 @@ class Break(models.Model):
 
 
 class ReplacementMember(models.Model):
-    member = models.ForeignKey("organizations.Member", models.CASCADE, "replacements_info", verbose_name="Сотрудник")
+    member = models.ForeignKey("organisations.Member", models.CASCADE, "replacements_info", verbose_name="Сотрудник")
     replacement = models.ForeignKey("breaks.Replacement", models.CASCADE, "members_info", verbose_name="Смена")
     status = models.ForeignKey(
         "breaks.ReplacementStatus", models.RESTRICT, "members", verbose_name="Status", blank=True

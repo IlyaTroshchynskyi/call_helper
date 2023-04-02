@@ -1,6 +1,6 @@
 from django.db.models import Case, When, Q, F, Value
 
-from organizations.models import Offer
+from organisations.models import Offer
 
 
 class OfferFactory:

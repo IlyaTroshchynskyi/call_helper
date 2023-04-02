@@ -44,7 +44,7 @@ INSTALLED_APPS += [
     "common",
     "users",
     "breaks",
-    "organizations",
+    "organisations",
     "drf_spectacular",
 ]
 

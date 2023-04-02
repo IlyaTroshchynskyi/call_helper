@@ -1,5 +1,5 @@
 from common.serializers import ExtendedModelSerializer
-from organizations.models import Group
+from organisations.models import Group
 
 # from organizations.serializers.api import EmployeeShortSerializer
 # from organizations.serializers.api import OrganisationShortSerializer

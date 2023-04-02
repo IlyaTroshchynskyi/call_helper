@@ -4,7 +4,7 @@ from django.db.models import Count
 from django.urls import reverse
 from django.utils.html import format_html
 
-from breaks.models.organizations import (
+from breaks.models.organisations import (
     Replacement,
     ReplacementStatus,
     ReplacementEmployee,
@@ -26,34 +26,17 @@ from breaks.models.organizations import (
 ##############################
 @admin.register(ReplacementStatus)
 class ReplacementStatusAdmin(admin.ModelAdmin):
-    list_display = (
-        "code",
-        "name",
-        "sort",
-        "is_active",
-    )
+    list_display = ("code", "name", "sort", "is_active")
 
 
 @admin.register(BreakStatus)
 class BreakStatusAdmin(admin.ModelAdmin):
-    list_display = (
-        "code",
-        "name",
-        "sort",
-        "is_active",
-    )
+    list_display = ("code", "name", "sort", "is_active")
 
 
 @admin.register(Replacement)
 class ReplacementAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "group",
-        "date",
-        "break_start",
-        "break_end",
-        "break_max_duration",
-    )
+    list_display = ("id", "group", "date", "break_start", "break_end", "break_max_duration")
     # inlines = (
     #     ReplacementMemberInline,
     # )
@@ -61,13 +44,7 @@ class ReplacementAdmin(admin.ModelAdmin):
 
 @admin.register(Break)
 class BreakAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "replacement_link",
-        "break_start",
-        "break_end",
-        "status",
-    )
+    list_display = ("id", "replacement_link", "break_start", "break_end", "status")
     list_filter = ("status",)
     empty_value_display = "Unknown"
     radio_fields = {"status": admin.VERTICAL}

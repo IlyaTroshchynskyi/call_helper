@@ -18,18 +18,18 @@ from common.views import (
     ExtendedRetrieveUpdateAPIView,
     ExtendedCRUAPIView,
 )
-from breaks.models.organizations import BreakStatus, ReplacementStatus, Replacement, ReplacementMember, Break
+from breaks.models.organisations import BreakStatus, ReplacementStatus, Replacement, ReplacementMember, Break
 
 
 @extend_schema_view(
-    list=extend_schema(summary="List status of replacements", tags=["Organization"]),
+    list=extend_schema(summary="List status of replacements", tags=["Organisation"]),
 )
 class ReplacementStatusView(StatusListMixinView):
     queryset = ReplacementStatus.objects.all()
 
 
 @extend_schema_view(
-    list=extend_schema(summary="List of status launch breaks", tags=["Organization"]),
+    list=extend_schema(summary="List of status launch breaks", tags=["Organisation"]),
 )
 class BreakStatusView(StatusListMixinView):
     queryset = BreakStatus.objects.all()

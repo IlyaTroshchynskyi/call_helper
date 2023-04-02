@@ -1,6 +1,6 @@
 from django.db.models import Subquery, OuterRef, Prefetch
 
-from breaks.models.organizations import Replacement, ReplacementMember, Break
+from breaks.models.organisations import Replacement, ReplacementMember, Break
 
 
 class ReplacementFactory:
