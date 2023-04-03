@@ -63,12 +63,11 @@ class MeView(RetrieveUpdateAPIView):
         return MeSerializer
 
     def get_object(self):
+        print(self.request.user)
         return self.request.user
 
 
-@extend_schema_view(
-    list=extend_schema(summary="List Users Search", tags=["Users"]),
-)
+@extend_schema_view(list=extend_schema(summary="List Users Search", tags=["Users"]))
 class UserListSearchView(ListViewSet):
     queryset = User.objects.exclude(Q(is_superuser=True) | Q(is_corporate_account=True))
     serializer_class = UserSearchListSerializer

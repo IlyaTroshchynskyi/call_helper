@@ -23,10 +23,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
             raise ParseError("User with such email has already registered")
         return email
 
-    def validate_password(self, value):
-        validate_password(value)
-        return value
-
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
@@ -47,11 +43,6 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         if not user.check_password(old_password):
             raise ParseError("Check your right input of old password")
         return attrs
-
-    def validate_new_password(self, value):
-        print("func new_password")
-        validate_password(value)
-        return value
 
     def update(self, instance, validated_data):
         print("update=======")

@@ -24,7 +24,11 @@ class UsersApiTestCase(APITestCase):
         self.user_1 = User.objects.create_user(**test_data)
         test_data["username"] = "Ilya1"
         test_data["email"] = "user1@example.com"
+        test_data["is_corporate_account"] = True
         self.user_2 = User.objects.create_user(**test_data)
+        test_data["username"] = "Search name"
+        test_data["is_corporate_account"] = False
+        self.user_3 = User.objects.create_user(**test_data)
 
     def test_registration_view(self):
         test_data = {
@@ -85,4 +89,36 @@ class UsersApiTestCase(APITestCase):
         self.assertEqual(
             response.data["profile"]["telegram_id"],
             [ErrorDetail(string="Ensure this field has no more than 20 characters.", code="max_length")],
+        )
+
+    def test_users_search_not_corporate_account(self):
+        self.client.force_login(self.user_1)
+        response = self.client.get("/api/users/search/")
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(
+            response.data[0],
+            OrderedDict(
+                [
+                    ("id", self.user_3.id),
+                    ("username", "Search name"),
+                    ("email", "user1@example.com"),
+                    ("full_name", "Test_Reg Last"),
+                ]
+            ),
+        )
+
+    def test_users_search_by_name(self):
+        self.client.force_login(self.user_1)
+        response = self.client.get("/api/users/search/", {"search": "Search name"})
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(
+            response.data[0],
+            OrderedDict(
+                [
+                    ("id", self.user_3.id),
+                    ("username", "Search name"),
+                    ("email", "user1@example.com"),
+                    ("full_name", "Test_Reg Last"),
+                ]
+            ),
         )
